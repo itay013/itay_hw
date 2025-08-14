@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Itay Shay — ארכיטקט מציאות דיגיטלית</title>
+
+  <!-- Fonts: Hebrew elegant pairing -->
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@600;700;800;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0a0a0a;
+      --ink:#f7f7f7;
+      --muted:#cfcfcf;
+      --gold-1:#d4af37;
+      --gold-2:#f1e4b0;
+      --gold-3:#b9891a;
+      --glass:rgba(212,175,55,0.08);
+      --glass-b:rgba(212,175,55,0.22);
+      --ring:conic-gradient(from 0deg at 50% 50%, #f7eeca 0deg, #b9891a 120deg, #d4af37 240deg, #f1e4b0 360deg);
+      --maxw:1200px;
+      --radius:20px;
+      --ease:cubic-bezier(.2,.7,.2,1);
+    }
+
+    *,*::before,*::after{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Heebo,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--ink);
+      background:
+        radial-gradient(1100px 760px at 80% -200px, rgba(212,175,55,.08), transparent 60%),
+        radial-gradient(900px 600px at -10% 120%, rgba(212,175,55,.05), transparent 60%),
+        linear-gradient(180deg,#0b0b0b,#0a0a0a 30%,#0a0a0a);
+      overflow-x:hidden;
+    }
+
+    /* subtle gilded grid */
+    .lux-grid{
+      position:fixed; inset:0; pointer-events:none; z-index:-1; opacity:.22;
+      background-image:radial-gradient(circle at 1px 1px, rgba(212,175,55,.14) 1px, transparent 0);
+      background-size:56px 56px; mix-blend-mode:soft-light;
+    }
+
+    /* scroll progress */
+    .scroll-progress{
+      position:fixed; top:0; right:0; height:2px; width:0; z-index:1000;
+      background:linear-gradient(90deg,var(--gold-2),var(--gold-1),var(--gold-3));
+      box-shadow:0 0 12px rgba(212,175,55,.7);
+    }
+
+    /* nav */
+    nav{
+      position:fixed; top:0; right:0; left:0; z-index:999;
+      backdrop-filter:saturate(120%) blur(16px);
+      background:rgba(0,0,0,.55);
+      border-bottom:1px solid var(--glass-b);
+    }
+    .nav-inner{
+      max-width:var(--maxw); margin:0 auto; padding:18px 24px;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .brand{
+      font-family:"Frank Ruhl Libre", serif;
+      font-weight:900; letter-spacing:.04em; font-size:1.35rem;
+      background:linear-gradient(120deg,var(--gold-1),var(--gold-2),var(--gold-3));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      text-shadow:0 0 22px rgba(212,175,55,.35);
+    }
+    .nav-links{display:flex; gap:26px; list-style:none; margin:0; padding:0}
+    .nav-links a{
+      text-decoration:none; color:#ececec; font-weight:600; font-size:1rem;
+      letter-spacing:.02em; padding:.2rem 0; position:relative; transition:color .25s var(--ease);
+    }
+    .nav-links a::after{
+      content:""; position:absolute; right:0; bottom:-6px; height:2px; width:0;
+      background:linear-gradient(90deg,var(--gold-2),var(--gold-1));
+      transition:width .35s var(--ease);
+    }
+    .nav-links a:hover{color:var(--gold-1)}
+    .nav-links a:hover::after{width:100%}
+
+    /* sections */
+    section{max-width:var(--maxw); margin:0 auto; padding:120px 24px}
+    .section-title{
+      font-family:"Frank Ruhl Libre", serif; font-weight:900; letter-spacing:-.01em;
+      font-size:clamp(2.2rem,6vw,3.6rem); text-align:center;
+      background:linear-gradient(120deg,#fff,var(--gold-2) 60%);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      margin:0 0 56px;
+    }
+    .title-underline{
+      width:120px; height:3px; margin:14px auto 0;
+      background:linear-gradient(90deg,var(--gold-3),var(--gold-1),var(--gold-2));
+      border-radius:2px;
+    }
+
+    /* hero */
+    .hero{min-height:86vh; display:grid; place-items:center; padding-top:160px; position:relative}
+    .halo{
+      position:absolute; inset:auto; width:54vmin; height:54vmin; border-radius:50%;
+      background:var(--ring); filter:blur(30px) saturate(120%); opacity:.16;
+      top:8%; left:6%; pointer-events:none;
+    }
+    .hero-inner{text-align:center; max-width:1000px; position:relative}
+    .display{
+      font-family:"Frank Ruhl Libre", serif; font-weight:900; line-height:1;
+      font-size:clamp(2.8rem,8.5vw,6rem); letter-spacing:-.02em; margin:0 0 18px;
+    }
+    .gold{
+      background:linear-gradient(135deg,var(--gold-1),var(--gold-2) 35%,var(--gold-3) 70%,var(--gold-1));
+      background-size:200% 200%;
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      animation:shine 8s var(--ease) infinite;
+      text-shadow:0 0 60px rgba(212,175,55,.25);
+    }
+    @keyframes shine{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+    .sub{
+      color:#e4e4e4; font-size:clamp(1.05rem,2.3vw,1.35rem); font-weight:400; letter-spacing:.01em;
+      margin:0 auto 36px; max-width:760px;
+    }
+
+    /* stats */
+    .stats{display:flex; gap:18px; justify-content:center; flex-wrap:wrap; margin:28px 0 34px}
+    .chip{
+      padding:14px 18px; border-radius:999px;
+      background:linear-gradient(180deg,rgba(212,175,55,.10),rgba(212,175,55,.06));
+      border:1px solid var(--glass-b); backdrop-filter: blur(10px);
+      display:flex; align-items:center; gap:10px;
+    }
+    .chip .n{
+      font-family:"Frank Ruhl Libre", serif; font-weight:900; color:var(--gold-1);
+      text-shadow:0 0 18px rgba(212,175,55,.35)
+    }
+    .chip .l{color:#d6d6d6; font-weight:700; letter-spacing:.02em; font-size:.9rem}
+
+    /* CTA */
+    .cta{
+      display:inline-flex; align-items:center; gap:12px;
+      padding:16px 26px; border-radius:40px; text-decoration:none;
+      color:#0b0b0b; font-weight:800; letter-spacing:.06em;
+      background:linear-gradient(120deg,var(--gold-1),var(--gold-3));
+      position:relative; overflow:hidden; transition:transform .25s var(--ease), box-shadow .25s var(--ease);
+      box-shadow:0 10px 28px rgba(212,175,55,.35);
+    }
+    .cta::before{
+      content:""; position:absolute; inset:-1px; border-radius:inherit;
+      background:linear-gradient(120deg,rgba(255,255,255,.45),transparent 40%,transparent 60%,rgba(255,255,255,.25));
+      mix-blend-mode:soft-light; opacity:.7;
+    }
+    .cta:hover{transform:translateY(-4px); box-shadow:0 18px 44px rgba(212,175,55,.45)}
+
+    /* grids & cards */
+    .grid{display:grid; gap:22px}
+    .grid.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .grid.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width:960px){ .grid.cols-3,.grid.cols-2{grid-template-columns:1fr} }
+
+    .card{
+      border-radius:var(--radius);
+      background:linear-gradient(180deg,rgba(212,175,55,.08),rgba(212,175,55,.045));
+      border:1px solid var(--glass-b);
+      padding:28px; transition:transform .35s var(--ease), box-shadow .35s var(--ease), border-color .35s var(--ease);
+      position:relative; overflow:hidden;
+    }
+    .card::after{
+      content:""; position:absolute; inset:0; pointer-events:none; opacity:0;
+      background:radial-gradient(600px 300px at var(--mx,50%) var(--my,0%), rgba(212,175,55,.18), transparent 70%);
+      transition:opacity .35s var(--ease);
+    }
+    .card:hover{transform:translateY(-6px); box-shadow:0 24px 60px rgba(0,0,0,.45),0 0 36px rgba(212,175,55,.28); border-color:rgba(212,175,55,.55)}
+    .card:hover::after{opacity:1}
+
+    .ico{font-size:2rem; color:var(--gold-1); margin-bottom:14px; text-shadow:0 0 14px rgba(212,175,55,.35)}
+    .h3{
+      font-family:"Frank Ruhl Libre", serif; font-weight:800; color:var(--gold-1);
+      margin:0 0 8px; letter-spacing:.01em; font-size:1.25rem;
+    }
+    .p{color:#e6e6e6; line-height:1.8; font-size:1.02rem}
+
+    .year{color:var(--gold-2); font-weight:800; letter-spacing:.02em; margin-bottom:6px}
+    .ptitle{font-family:"Frank Ruhl Libre", serif; color:var(--gold-1); font-weight:800; margin:0 0 8px; font-size:1.1rem}
+
+    /* process */
+    .step{text-align:center; padding:34px 26px; position:relative}
+    .step::before{
+      content:attr(data-step);
+      position:absolute; top:-22px; right:50%; transform:translateX(50%);
+      width:46px; height:46px; border-radius:50%;
+      background:var(--ring); box-shadow:0 0 22px rgba(212,175,55,.35) inset;
+      display:grid; place-items:center; color:#111; font-weight:900; font-family:"Frank Ruhl Libre", serif;
+    }
+
+    /* contact */
+    .contact-wrap{display:grid; gap:22px; grid-template-columns:repeat(4,minmax(0,1fr))}
+    @media (max-width:960px){ .contact-wrap{grid-template-columns:1fr 1fr} }
+    @media (max-width:640px){ .contact-wrap{grid-template-columns:1fr} }
+
+    /* reveal */
+    .reveal{opacity:0; transform:translateY(24px); transition:opacity .8s var(--ease), transform .8s var(--ease)}
+    .reveal.show{opacity:1; transform:none}
+
+    /* 3D canvas */
+    #lux-bg{position:fixed; inset:0; z-index:-2; opacity:.28; pointer-events:none}
+
+    /* accessibility */
+    @media (prefers-reduced-motion:reduce){
+      .cta,.card::after,.gold{animation:none!important; transition:none!important}
+    }
+  </style>
+</head>
+<body>
+  <div class="scroll-progress" id="progress"></div>
+  <canvas id="lux-bg"></canvas>
+  <div class="lux-grid"></div>
+
+  <nav>
+    <div class="nav-inner">
+      <div class="brand">ITAY SHAY</div>
+      <ul class="nav-links">
+        <li><a href="#about">אודות</a></li>
+        <li><a href="#services">שירותים</a></li>
+        <li><a href="#portfolio">פורטפוליו</a></li>
+        <li><a href="#process">תהליך</a></li>
+        <li><a href="#contact">יצירת קשר</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="halo" aria-hidden="true"></div>
+    <div class="hero-inner reveal">
+      <h1 class="display">
+        אני מגשים את <span class="gold">״החלומות שלך״</span><br/>למציאות
+      </h1>
+      <p class="sub">ממושגים בלתי אפשריים ועד יצירות קולנועיות. אם אפשר לחלום את זה - אני יכול ליצור את זה.</p>
+
+      <div class="stats" aria-label="נתונים עיקריים">
+        <div class="chip"><span class="n">5+</span><span class="l">שנות ניסיון</span></div>
+        <div class="chip"><span class="n">100+</span><span class="l">פרויקטים</span></div>
+        <div class="chip"><span class="n">11K</span><span class="l">עוקבים</span></div>
+      </div>
+
+      <a href="#portfolio" class="cta" id="magnet">
+        <span>לפניי הפורטפוליו</span><i class="fa-solid fa-arrow-right"></i>
+      </a>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="reveal">
+    <h2 class="section-title">החזון</h2>
+    <div class="title-underline"></div>
+
+    <div class="grid cols-2" style="align-items:center; margin-top:36px">
+      <div class="p">
+        <p style="margin-top:0">בגיל 23 אני ארכיטקט מציאות דיגיטלית שמתרגם רעיונות בלתי אפשריים לחוויות חזותיות נושמות.</p>
+        <p>מהובלת צוות של 8 יוצרים ב־צה״ל ועד יצירת תוכן ויראלי ליוצרים הגדולים בארץ — המיקוד שלי הוא סטוריטלינג קולנועי שמונע מטכנולוגיה.</p>
+        <p>הארסנל שלי כולל <span dir="ltr">Unreal Engine 5</span>, <span dir="ltr">Blender</span>, <span dir="ltr">CGI/3D</span> ו־<span dir="ltr">AI</span>, לצד כלים מתקדמים של Adobe — מגויסים כולם לשירות הרעיון.</p>
+        <p>בין אם זה שחזור משרדו של פרויד ב־3D לדוקו או עולמות הולוגרפיים לפרסומות — אני הופך את הבלתי אפשרי לבלתי נמנע.</p>
+      </div>
+      <div class="card" style="height:420px; display:grid; place-items:center;">
+        <div style="width:240px; height:240px; border-radius:50%; background:var(--ring); filter:blur(8px); opacity:.55"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services" class="reveal">
+    <h2 class="section-title">ארסנל שמכופף מציאות</h2>
+    <div class="title-underline"></div>
+
+    <div class="grid cols-3" style="margin-top:36px">
+      <div class="card service">
+        <div class="ico"><i class="fa-solid fa-cube"></i></div>
+        <h3 class="h3">סביבות 3D ו־CGI</h3>
+        <p class="p">עולמות ב־Unreal ו־Blender — מרחובות קלאסיים ועד סצנות עתידניות.</p>
+      </div>
+
+      <div class="card service">
+        <div class="ico"><i class="fa-solid fa-brain"></i></div>
+        <h3 class="h3">ויז׳ואלים מבוססי AI</h3>
+        <p class="p">מ־Concepts ועד Mood — האצה חכמה בלי לוותר על איכות.</p>
+      </div>
+
+      <div class="card service">
+        <div class="ico"><i class="fa-solid fa-film"></i></div>
+        <h3 class="h3">פוסט־פרודקשן קולנועי</h3>
+        <p class="p">קומפוזיטינג, מוושן וגריידינג — גימור פרימיום לכל פריים.</p>
+      </div>
+
+      <div class="card service">
+        <div class="ico"><i class="fa-solid fa-rocket"></i></div>
+        <h3 class="h3">תוכן ויראלי</h3>
+        <p class="p">רעיונות שעוצרים גלילה ומייצרים ביצועים אמיתיים.</p>
+      </div>
+
+      <div class="card service">
+        <div class="ico"><i class="fa-solid fa-shield-halved"></i></div>
+        <h3 class="h3">דיוק ברמת צבא</h3>
+        <p class="p">עמידה בלחץ, אפס פשרות, מסרים חדים ונקיים.</p>
+      </div>
+
+      <div class="card service">
+        <div class="ico"><i class="fa-solid fa-city"></i></div>
+        <h3 class="h3">ארכיטקטורת מותג</h3>
+        <p class="p">מזהות ויזואלית ועד יקום שלם סביב המותג.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PORTFOLIO -->
+  <section id="portfolio" class="reveal">
+    <h2 class="section-title">פורטפוליו</h2>
+    <div class="title-underline"></div>
+
+    <div class="grid cols-3" style="margin-top:36px">
+      <div class="card">
+        <div class="year">2024</div>
+        <h3 class="ptitle">דובר צה״ל — זירה בינלאומית</h3>
+        <p class="p">סטוריטלינג מדויק כשכל העולם צופה.</p>
+      </div>
+
+      <div class="card">
+        <div class="year">2023</div>
+        <h3 class="ptitle"><span dir="ltr">INDE Game Productions</span></h3>
+        <p class="p">ראש צוות עריכה — טרנדים, ניהול קריאייטיב ומיליוני צפיות.</p>
+      </div>
+
+      <div class="card">
+        <div class="year">2022</div>
+        <h3 class="ptitle">דוקו 3D: פרויד</h3>
+        <p class="p">שחזור אייקוני ב־3D לפריים דוקומנטרי מוקפד.</p>
+      </div>
+
+      <div class="card">
+        <div class="year">2022</div>
+        <h3 class="ptitle">״Bat Yana״ — קליפ</h3>
+        <p class="p">תסריט, עיצוב סביבות ועריכה — סטוריטלינג רב־ממדי.</p>
+      </div>
+
+      <div class="card">
+        <div class="year">2022</div>
+        <h3 class="ptitle">פרסומת <span dir="ltr">Six24</span></h3>
+        <p class="p">עולמות 3D למסכי LED — חללים בלתי אפשריים שנראים מוחשיים.</p>
+      </div>
+
+      <div class="card">
+        <div class="year">2020-2024</div>
+        <h3 class="ptitle"><span dir="ltr">@UNIQUE_IL</span> — קהילה</h3>
+        <p class="p">11K+ עוקבים — צמיחה עקבית ותוכן בעל הד.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section id="process" class="reveal">
+    <h2 class="section-title">הפרוטוקול היצירתי</h2>
+    <div class="title-underline"></div>
+
+    <div class="grid cols-3" style="margin-top:36px">
+      <div class="card step" data-step="01">
+        <div class="h3">סינתזת חזון</div>
+        <p class="p">לזקק את החלום ולהבין את הליבה האמיתית של הרעיון.</p>
+      </div>
+      <div class="card step" data-step="02">
+        <div class="h3">שרטוטי מציאות</div>
+        <p class="p">קונספטים ב־AI וסטוריבורדים — יישור קו לפני שמניעים פיקסל.</p>
+      </div>
+      <div class="card step" data-step="03">
+        <div class="h3">עיצוב ממד</div>
+        <p class="p">Unreal & Blender — גאומטריה, אור ומרקם שמשרתים סיפור.</p>
+      </div>
+      <div class="card step" data-step="04">
+        <div class="h3">מרד בפיזיקה</div>
+        <p class="p">VFX וקומפוזיטינג שהופכים את הבלתי אפשרי למוחשי.</p>
+      </div>
+      <div class="card step" data-step="05">
+        <div class="h3">השקה ויראלית</div>
+        <p class="p">פוליש, אקספורט והשקה חכמה — בנוי לביצועים בכל פלטפורמה.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="reveal">
+    <h2 class="section-title">צור קשר</h2>
+    <div class="title-underline"></div>
+
+    <p class="p" style="text-align:center; max-width:760px; margin:10px auto 0">
+      מוכן לשבור את הגבולות של המציאות? בואו נארכיטקט יחד את הבלתי אפשרי.
+    </p>
+
+    <div class="contact-wrap" style="margin-top:36px">
+      <a class="card" href="tel:+972542003378" style="text-decoration:none; color:inherit">
+        <div class="ico"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        <h3 class="h3">קו ישיר</h3>
+        <p class="p">+972-542003378</p>
+      </a>
+
+      <a class="card" href="mailto:itayshaydesigns@gmail.com" style="text-decoration:none; color:inherit">
+        <div class="ico"><i class="fa-solid fa-envelope"></i></div>
+        <h3 class="h3">פורטל דיגיטלי</h3>
+        <p class="p">itayshaydesigns@gmail.com</p>
+      </a>
+
+      <div class="card">
+        <div class="ico"><i class="fa-solid fa-globe"></i></div>
+        <h3 class="h3">מיקום</h3>
+        <p class="p">ישראל</p>
+      </div>
+
+      <a class="card" href="https://itayshay.artstation.com" target="_blank" rel="noopener" style="text-decoration:none; color:inherit">
+        <div class="ico"><i class="fa-solid fa-palette"></i></div>
+        <h3 class="h3">פורטפוליו</h3>
+        <p class="p" dir="ltr">itayshay.artstation.com</p>
+      </a>
+    </div>
+  </section>
+
+  <script>
+    /* scroll progress */
+    const progress = document.getElementById('progress');
+    document.addEventListener('scroll', () => {
+      const h = document.documentElement;
+      const scrolled = (h.scrollTop)/(h.scrollHeight - h.clientHeight);
+      progress.style.width = (scrolled*100)+'%';
+    }, {passive:true});
+
+    /* reveal on view */
+    const io = new IntersectionObserver(entries=>{
+      entries.forEach(e=>{
+        if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target); }
+      })
+    },{threshold:.12});
+    document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+    /* magnetic button */
+    const magnet = document.getElementById('magnet');
+    let mRAF;
+    if (magnet){
+      magnet.addEventListener('mousemove', (e)=>{
+        const r = magnet.getBoundingClientRect();
+        const dx = (e.clientX - (r.right - r.width/2))/r.width; // RTL תיקון
+        const dy = (e.clientY - (r.top + r.height/2))/r.height;
+        cancelAnimationFrame(mRAF);
+        mRAF = requestAnimationFrame(()=>{
+          magnet.style.transform = `translate(${-dx*10}px, ${dy*8}px)`;
+        });
+      });
+      magnet.addEventListener('mouseleave', ()=>{ magnet.style.transform = ''; });
+    }
+
+    /* card spotlight */
+    document.querySelectorAll('.card').forEach(card=>{
+      card.addEventListener('pointermove', e=>{
+        const r = card.getBoundingClientRect();
+        card.style.setProperty('--mx', ((e.clientX - r.left)/r.width)*100 + '%');
+        card.style.setProperty('--my', ((e.clientY - r.top)/r.height)*100 + '%');
+      });
+    });
+
+    /* smooth scroll */
+    document.querySelectorAll('a[href^="#"]').forEach(a=>{
+      a.addEventListener('click', e=>{
+        const id = a.getAttribute('href');
+        const t = document.querySelector(id);
+        if(t){ e.preventDefault(); t.scrollIntoView({behavior:'smooth', block:'start'}); }
+      });
+    });
+
+    /* minimal gold 3D accent */
+    const canvas = document.getElementById('lux-bg');
+    const renderer = new THREE.WebGLRenderer({canvas, alpha:true, antialias:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.6));
+    renderer.setSize(innerWidth, innerHeight);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, .1, 100);
+    camera.position.set(0,0,9);
+
+    const group = new THREE.Group(); scene.add(group);
+
+    const geo = new THREE.TorusKnotGeometry(1.1, .34, 180, 24);
+    const mat = new THREE.MeshStandardMaterial({ color:0xd4af37, metalness:.95, roughness:.22, envMapIntensity:1.2 });
+    const mesh = new THREE.Mesh(geo, mat);
+    group.add(mesh);
+
+    const wire = new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(4.2,1));
+    const line = new THREE.LineSegments(wire, new THREE.LineBasicMaterial({color:0x6b5314, transparent:true, opacity:.25}));
+    group.add(line);
+
+    const aLight = new THREE.AmbientLight(0xffffff,.3); scene.add(aLight);
+    const p1 = new THREE.PointLight(0xf1e4b0,1.2,0); p1.position.set(-4,3,4); scene.add(p1);
+    const p2 = new THREE.PointLight(0xb9891a,.8,0);  p2.position.set(3,-2,2); scene.add(p2);
+
+    function loop(t=0){
+      mesh.rotation.x = t*0.00025;
+      mesh.rotation.y = t*0.00035;
+      line.rotation.y = t*0.00015;
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    }
+    loop();
+
+    addEventListener('resize', ()=>{
+      renderer.setSize(innerWidth, innerHeight);
+      camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+    }, {passive:true});
+  </script>
+</body>
+</html>
